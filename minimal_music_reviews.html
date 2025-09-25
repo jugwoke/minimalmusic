@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Minimal Music Reviews</title>
+  <meta name="description" content="A minimalistic site for music reviews and commentary." />
+  <style>
+    :root{
+      --bg:#0f1115; /* near-black */
+      --card:#0f1720;
+      --muted:#9aa4af;
+      --accent:#7dd3fc; /* light cyan */
+      --glass: rgba(255,255,255,0.03);
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg),#071018 60%);
+      color: #e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:32px;
+      display:flex;
+      justify-content:center;
+      align-items:start;
+      gap:24px;
+    }
+    .site{
+      width:min(980px,96%);
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:18px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:12px;
+    }
+    .logo{
+      width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#60a5fa);
+      display:grid;place-items:center;font-weight:700;color:#042029;font-size:18px;box-shadow:0 6px 18px rgba(2,6,23,0.6);
+    }
+    h1{font-size:20px;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .controls{
+      display:flex;gap:8px;align-items:center
+    }
+    .search{
+      background:var(--glass);border:1px solid rgba(255,255,255,0.04);padding:8px 12px;border-radius:10px;color:inherit;min-width:220px;
+    }
+    .btn{
+      background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 12px;border-radius:10px;color:var(--accent);cursor:pointer;font-weight:600
+    }
+
+    main{display:grid;grid-template-columns:1fr 360px;gap:20px}
+
+    /* left: reviews */
+    .list{
+      display:flex;flex-direction:column;gap:12px
+    }
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.03);
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .meta{display:flex;justify-content:space-between;align-items:center}
+    .title{font-weight:700;font-size:15px;margin:0}
+    .by{color:var(--muted);font-size:13px}
+    .excerpt{color:var(--muted);font-size:14px;margin:0}
+    .tags{display:flex;gap:8px}
+    .tag{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:999px;font-size:12px;color:var(--muted)}
+
+    .rating{font-weight:800;color:var(--accent)}
+    .small{font-size:12px;color:var(--muted)}
+
+    /* right: sidebar */
+    aside{position:sticky;top:24px}
+    .panel{background:var(--card);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+    label{font-size:13px;color:var(--muted)}
+    input[type=text], textarea, select{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:inherit;font-size:14px}
+    textarea{min-height:110px;resize:vertical}
+    .submit{margin-top:8px;width:100%}
+
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+
+    /* responsive */
+    @media (max-width:880px){
+      main{grid-template-columns:1fr}
+      aside{position:static}
+    }
+
+    /* small utilities */
+    .muted{color:var(--muted)}
+    .pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:12px}
+    .no-reviews{color:var(--muted);padding:22px;text-align:center}
+
+    /* accessible focus */
+    :focus{outline:3px solid rgba(125,211,252,0.12);outline-offset:2px}
+  </style>
+</head>
+<body>
+  <div class="site" id="app">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden>MM</div>
+        <div>
+          <h1>Minimal Music Reviews</h1>
+          <p class="lead">Short, clear reviews and commentary — no noise.</p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <input id="q" class="search" placeholder="Search artist, album, note..." aria-label="Search reviews">
+        <button id="newBtn" class="btn" aria-controls="reviewForm">Write</button>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div id="list" class="list" aria-live="polite"></div>
+        <footer>
+          <div class="muted">Built for focus. Reviews are stored locally in your browser.</div>
+        </footer>
+      </section>
+
+      <aside>
+        <div id="panel" class="panel">
+          <form id="reviewForm">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <strong>New review</strong>
+              <div class="small muted">Local only</div>
+            </div>
+            <div class="field">
+              <label for="artist">Artist / Band</label>
+              <input id="artist" name="artist" type="text" placeholder="e.g. Arlo Parks" required>
+            </div>
+            <div class="field">
+              <label for="title">Album / Song title</label>
+              <input id="titleInput" name="title" type="text" placeholder="e.g. Collapsed in Sunbeams" required>
+            </div>
+            <div class="field">
+              <label for="rating">Rating</label>
+              <select id="rating" name="rating">
+                <option value="5">★★★★★ Excellent</option>
+                <option value="4">★★★★ Very good</option>
+                <option value="3" selected>★★★ Good</option>
+                <option value="2">★★ Mediocre</option>
+                <option value="1">★ Poor</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="tags">Tags (comma separated)</label>
+              <input id="tags" name="tags" type="text" placeholder="indie, electronic, reissue">
+            </div>
+            <div class="field">
+              <label for="body">Review</label>
+              <textarea id="body" name="body" placeholder="Write your concise, focused review..." required></textarea>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button type="submit" class="btn submit">Publish</button>
+              <button id="clearBtn" type="button" class="btn">Clear</button>
+            </div>
+          </form>
+          <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+            <div class="small muted">Filters</div>
+            <button id="resetFilters" class="btn">Reset</button>
+          </div>
+          <div style="margin-top:10px">
+            <div class="small muted">Sort by</div>
+            <select id="sort" style="width:100%;margin-top:6px">
+              <option value="new">Newest</option>
+              <option value="old">Oldest</option>
+              <option value="rating">Rating</option>
+            </select>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    // Minimal single-file review app. Stores data in localStorage under 'mm_reviews'.
+    (function(){
+      const STORAGE_KEY = 'mm_reviews_v1';
+      const q = id => document.getElementById(id);
+      const list = q('list');
+      const form = q('reviewForm');
+      const search = q('q');
+      const newBtn = q('newBtn');
+      const clearBtn = q('clearBtn');
+      const resetFilters = q('resetFilters');
+      const sortSelect = q('sort');
+
+      // sample initial reviews if empty
+      const SAMPLE = [
+        {
+          id:cryptoRandomId(), artist:'Arlo Parks', title:'Collapsed in Sunbeams', rating:5, tags:['indie','singer-songwriter'],
+          body:'Warm, intimate songwriting. The production keeps the vocals front and center and the lyricism lands every time.',
+          created: Date.now()-1000*60*60*24*40
+        },
+        {
+          id:cryptoRandomId(), artist:'Aphex Twin', title:'Selected Ambient Works 85–92', rating:5, tags:['electronic','classic'],
+          body:'A landmark in ambient electronic music — sparse, curious, and endlessly re-listenable.',
+          created: Date.now()-1000*60*60*24*200
+        }
+      ];
+
+      function getReviews(){
+        try{
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if(!raw) return SAMPLE.slice();
+          return JSON.parse(raw);
+        } catch(e){
+          console.error(e);return SAMPLE.slice();
+        }
+      }
+      function saveReviews(arr){
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+      }
+
+      function cryptoRandomId(){
+        return 'r_'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
+      }
+
+      function render(){
+        const reviews = getReviews();
+        const qv = search.value.trim().toLowerCase();
+        const sort = sortSelect.value;
+        let out = reviews.slice();
+        if(qv){
+          out = out.filter(r=> (r.artist+ ' ' + r.title + ' ' + r.body + ' ' + (r.tags||[]).join(' ')).toLowerCase().includes(qv));
+        }
+        if(sort==='new') out.sort((a,b)=>b.created-a.created);
+        if(sort==='old') out.sort((a,b)=>a.created-b.created);
+        if(sort==='rating') out.sort((a,b)=>b.rating-a.rating);
+
+        list.innerHTML='';
+        if(!out.length){
+          list.innerHTML = '<div class="card no-reviews">No reviews yet — write the first one.</div>';
+          return;
+        }
+
+        out.forEach(r => {
+          const el = document.createElement('article');
+          el.className='card';
+          el.innerHTML = `
+            <div class="meta">
+              <div>
+                <div class="title">${escapeHtml(r.title)}</div>
+                <div class="by">${escapeHtml(r.artist)} · <span class="small muted">${new Date(r.created).toLocaleDateString()}</span></div>
+              </div>
+              <div style="text-align:right">
+                <div class="rating">${'★'.repeat(r.rating)}</div>
+                <div class="small muted">${r.tags? r.tags.map(t=>`<span class=\"tag\">${escapeHtml(t)}</span>`).join(' '):''}</div>
+              </div>
+            </div>
+            <p class="excerpt">${escapeHtml(r.body.slice(0,220))}${r.body.length>220? '…':''}</p>
+            <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+              <div class="small muted">ID: ${escapeHtml(r.id.slice(-6))}</div>
+              <div style="display:flex;gap:8px">
+                <button class="btn" data-id="${r.id}" data-act="view">Open</button>
+                <button class="btn" data-id="${r.id}" data-act="del">Delete</button>
+              </div>
+            </div>
+          `;
+          list.appendChild(el);
+        });
+      }
+
+      function escapeHtml(s){
+        return String(s||'').replace(/[&<>\"']/g, function(c){
+          return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c];
+        });
+      }
+
+      // form handling
+      form.addEventListener('submit', e=>{
+        e.preventDefault();
+        const artist = q('artist').value.trim();
+        const titleVal = q('titleInput').value.trim();
+        const rating = Number(q('rating').value);
+        const tagsRaw = q('tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+        const body = q('body').value.trim();
+        if(!artist || !titleVal || !body) return;
+        const arr = getReviews();
+        const obj = {id:cryptoRandomId(), artist, title: titleVal, rating, tags:tagsRaw, body, created: Date.now()};
+        arr.push(obj);
+        saveReviews(arr);
+        form.reset();
+        render();
+      });
+
+      // list actions (delegate)
+      list.addEventListener('click', e=>{
+        const btn = e.target.closest('button');
+        if(!btn) return;
+        const id = btn.dataset.id;
+        const act = btn.dataset.act;
+        if(act==='del'){
+          if(!confirm('Delete this review?')) return;
+          let arr = getReviews();
+          arr = arr.filter(r=>r.id!==id);
+          saveReviews(arr);
+          render();
+          return;
+        }
+        if(act==='view'){
+          const arr = getReviews();
+          const r = arr.find(x=>x.id===id);
+          if(!r) return;
+          // open a minimal modal-like detail using alert for accessibility and simplicity
+          const details = `${r.title} — ${r.artist}\nRating: ${'★'.repeat(r.rating)}\nTags: ${(r.tags||[]).join(', ')}\n\n${r.body}`;
+          alert(details);
+        }
+      });
+
+      // quick controls
+      search.addEventListener('input', render);
+      sortSelect.addEventListener('change', render);
+      clearBtn.addEventListener('click', ()=>{
+        form.reset();
+      });
+      resetFilters.addEventListener('click', ()=>{
+        search.value='';sortSelect.value='new';render();
+      });
+
+      newBtn.addEventListener('click', ()=>{
+        q('artist').focus();
+        window.scrollTo({top:0,behavior:'smooth'});
+      });
+
+      // Initialize
+      render();
+
+      // Expose small helper to clear storage if user wants in console
+      window.MMREV = {clear:()=>{localStorage.removeItem(STORAGE_KEY);render();}}
+    })();
+  </script>
+</body>
+</html>
